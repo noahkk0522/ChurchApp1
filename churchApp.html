@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>Church Hub (Starter)</title>
+   <style>
+     body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 900px; }
+     h1 { margin-bottom: 6px; }
+     .muted { color: #555; margin-top: 0; }
+     .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+     @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+     .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; }
+     .row { display: flex; gap: 8px; margin-top: 10px; }
+     input, textarea, button { font: inherit; }
+     input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+     textarea { min-height: 70px; resize: vertical; }
+     button { padding: 10px 12px; border-radius: 10px; border: 1px solid #aaa; background: #f7f7f7; cursor: pointer; }
+     button:hover { background: #efefef; }
+     ul { padding-left: 18px; }
+     li { margin: 10px 0; }
+     .itemTop { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+     .tag { font-size: 12px; padding: 2px 8px; border: 1px solid #ccc; border-radius: 999px; color: #444; }
+     .danger { border-color: #d66; }
+     .danger:hover { background: #ffecec; }
+     .tiny { font-size: 12px; color: #666; }
+   </style>
+ </head>
+ <body>
+   <h1>Church Hub</h1>
+   <p class="muted">Announcements • Events • Prayer Requests (saved locally in this browser)</p>
+
+
+   <div class="grid">
+     <section class="card">
+       <h2>Announcements</h2>
+       <div class="row">
+         <input id="announcementInput" placeholder="E.g., Youth group meets Friday at 7pm" />
+         <button id="addAnnouncementBtn">Add</button>
+       </div>
+       <ul id="announcementList"></ul>
+     </section>
+
+
+     <section class="card">
+       <h2>Events</h2>
+       <div class="row">
+         <input id="eventTitleInput" placeholder="Event title (E.g., Community BBQ)" />
+       </div>
+       <div class="row">
+         <input id="eventDateInput" type="date" />
+         <button id="addEventBtn">Add</button>
+       </div>
+       <ul id="eventList"></ul>
+     </section>
+
+
+     <section class="card" style="grid-column: 1 / -1;">
+       <h2>Prayer Requests</h2>
+       <div class="row">
+         <textarea id="prayerRequestInput" placeholder="Type a prayer request..."></textarea>
+       </div>
+       <div class="row" style="align-items: center;">
+         <label style="display:flex; gap:8px; align-items:center;">
+           <input id="prayerAnonInput" type="checkbox" />
+           Anonymous
+         </label>
+         <button id="addPrayerRequestBtn">Add</button>
+         <button id="clearAllBtn" class="danger" title="Clears ALL data on this device">Clear all</button>
+       </div>
+       <ul id="prayerList"></ul>
+       <p class="tiny">Note: This demo saves to <code>localStorage</code> on this computer only.</p>
+     </section>
+   </div>
+
+
+   <script>
+        const STORAGE_KEY = "churchHub.v1";
+        let state = {
+          announcements: [],
+          events: [],
+          prayerRequests: []
+        };
+
+        const loadedState = loadState();
+        if (loadedState) {
+          state = { ...state, ...loadedState };
+        }
+
+        function loadState() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            try { return JSON.parse(raw); } catch { return null;}
+        }
+        function renderAnnouncements() {
+            const list = document.getElementById("announcementList");
+            list.innerHTML = state.announcements
+            .map(a => `<li> <div class="itemTop"> <div>${a}</div>
+                <button class="danger" data-action="deleteAnnouncement" data-id="${a}">
+                    Delete</button> </div> </li>`).join("")
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+        function deleteAnnouncement(id) {
+            state.announcements = state.announcements.filter(a => a !== id);
+            saveState();
+            renderAnnouncements();
+        }
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action='deleteAnnouncement']");
+            if (!btn) return;
+            deleteAnnouncement(btn.dataset.id);
+        });
+        function addAnnouncement() {
+            const input = document.getElementById("announcementInput");
+            const text = input.value.trim();
+            if (!text) return;
+            state.announcements.push(text);
+            input.value = "";
+            saveState();
+            renderAnnouncements();
+        }
+        document.getElementById("addAnnouncementBtn").addEventListener("click", addAnnouncement);
+        renderAnnouncements();
+
+        
+        function loadState() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            try { return JSON.parse(raw); } catch { return null;}
+        }
+        function renderEvents() {
+            const list = document.getElementById("eventList");
+            list.innerHTML = state.events
+            .map(a => `<li> <div class="itemTop"> <div>${a}</div>
+                <button class="danger" data-action="deleteEvent" data-id="${a}">
+                    Delete</button> </div> </li>`).join("")
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+        function deleteEvent(id) {
+            state.events = state.events.filter(a => a !== id);
+            saveState();
+            renderEvents();
+        }
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action='deleteEvent']");
+            if (!btn) return;
+            deleteEvent(btn.dataset.id);
+        });
+        function addEvent() {
+            const input = document.getElementById("eventTitleInput");
+            const date = document.getElementById("eventDateInput").value;
+            const text = input.value.trim();
+            if (!text) return;
+            state.events.push(text + " - " + date);
+            input.value = "";
+            document.getElementById("eventDateInput").value = "";
+            saveState();
+            renderEvents();
+        }
+        document.getElementById("addEventBtn").addEventListener("click", addEvent);
+        renderEvents();
+
+
+        function loadState() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            try { return JSON.parse(raw); } catch { return null;}
+        }
+        function renderPrayerRequests() {
+            const list = document.getElementById("prayerList");
+            list.innerHTML = state.prayerRequests
+            .map(a => `<li> <div class="itemTop"> <div>${a}</div>
+                <button class="danger" data-action="deletePrayerRequest" data-id="${a}">
+                    Delete</button> </div> </li>`).join("")
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+        function deletePrayerRequest(id) {
+            state.prayerRequests = state.prayerRequests.filter(a => a !== id);
+            saveState();
+            renderPrayerRequests();
+        }
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action='deletePrayerRequest']");
+            if (!btn) return;
+            deletePrayerRequest(btn.dataset.id);
+        });
+        function addPrayerRequest() {
+            const input = document.getElementById("prayerRequestInput");
+            const text = input.value.trim();
+            if (!text) return;
+            const anon = document.getElementById("prayerAnonInput").checked;
+            const request = anon ? `Anonymous: ${text}` : text;
+
+            state.prayerRequests.push(request);
+            input.value = "";
+            document.getElementById("prayerAnonInput").checked = false;
+
+            saveState();
+            renderPrayerRequests();
+        }
+        document.getElementById("addPrayerRequestBtn").addEventListener("click", addPrayerRequest);
+        document.getElementById("clearAllBtn").addEventListener("click", () => {
+            state.prayerRequests = [];
+            saveState();
+            renderPrayerRequests();
+        });
+        renderPrayerRequests();
+    </script>
+</body>
+</html>
